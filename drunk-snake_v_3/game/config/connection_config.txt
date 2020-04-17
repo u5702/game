@@ -1,0 +1,5 @@
+#Only edit the tagged entries! Do not insert tax stamps!
+#start
+server_ip = '10.0.0.10'#     <-- Hier Server IP Adresse eintragen
+server_port = 5555#          <-- Hier Server Port eintragen
+#end
