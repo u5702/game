@@ -1,13 +1,13 @@
 # Autor: Elijah Grabher
 # Date of creation: 13.04.2020
 # Last edited: 15.04.2020
-#D pipe hurat...
 import time
 import socket
 import multiprocessing
 import game_classes as game
 import board
 import stager
+import os
 
 mts = multiprocessing.Queue()
 stm = multiprocessing.Queue()
@@ -39,7 +39,8 @@ while c <= 8:
         c += 1
         x += 1
 
-stgr_process = multiprocessing.process(target=stgr, args=(mts, stm ,x))
+
+stgr_process = multiprocessing.Process(target=stager.stgr, args=(mts, stm ,x))
 stgr_process.start()
 
 while True:
@@ -111,7 +112,7 @@ while True:
         i += 1    
         print("\n")
         input("###  Drück Enter um fortzufahren  ###")
-            print("\n")
+        print("\n")
             
     if endbit == 1:
                 
