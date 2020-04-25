@@ -16,6 +16,8 @@ cm.queue_mts.put((0, "to socket 1 -- message 0\n"))
 cm.queue_mts.put((0, "to socket 0 -- message 1\n"))
 cm.queue_mts.put((0, "to socket 1 -- message 1\n"))
 
+for i in stager.connection_list:
+    print(i)
 
 while True:
     

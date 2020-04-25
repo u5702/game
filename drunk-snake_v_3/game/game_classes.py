@@ -12,6 +12,8 @@ class player:
     def __init__(self, nm, bddy="#!sys_none_buddy"):
         
         self.name = nm
+        self.connection = ()
+        self.socket_id = -1
         self.level = 0
         self.dst = 100
         self.winbit = 0
@@ -62,5 +64,6 @@ def dice():
     
     result = random.randint(1, 6)
     return result
+
 
 #end

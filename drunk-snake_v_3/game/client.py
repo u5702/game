@@ -22,7 +22,7 @@ port = server_port
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((host, port))
-s.send(b'Hello Server! It is Client.')
+#s.send(b'Hello Server! It is Client.')
 
 
 
@@ -54,7 +54,7 @@ def send(data, s=s):
     s.send(rawdata)
 
 
-def listener(buffer, s=s):
+def listener(a, buffer, s=s):
     
     while True:
         
@@ -91,7 +91,7 @@ def get_from_listener():
         
 def create_thread_listener(buffer):
                
-    t = threading.Thread(target=listener, args=(buffer))
+    t = threading.Thread(target=listener, args=('a', buffer))
     t.daemon = True
     t.start()
         

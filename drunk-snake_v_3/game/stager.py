@@ -105,7 +105,7 @@ def listener(connection, address, buffer):
             print("Error, connection closed ", address)
             break
         
-        ptq = (received_data, address)
+        ptq = (received_data, connection)
         queue_data.put(ptq)
         
     

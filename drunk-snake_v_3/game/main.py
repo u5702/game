@@ -7,42 +7,64 @@ import board
 import stager
 import threading
 from queue import Queue
-import communication_manager
-
+import communication_manager as cm
 
 
 x = 0
 winbitsum = 0
 endbit = 0
 
-f_user = open("config/user_config.txt", "r")
+x = int(input("Geben Sie die Anzahl an Spielern ein (max. 8): "))
 
-for line in f_user:
+time.sleep(0.25)
+
+print("Starting to connect the clients...\n")
+
+stager.start_stager(4444, x)
+stager.start_listener(x, 256)
+stager.start_get_from_listener()
+stager.start_sender()
+
+print("Done, ", x, " clients are connected")
+
+
+def send_to_all(data, except_player=-1):
+    
+    sto = 0
+    while sto < x:
         
-    exec('{}' .format(line))
+        if sto == except_player:
+            sto += 1
+            continue
+        
+        cm.queue_mts.put((sto, data))
+        
+        sto += 1
+        
+        time.sleep(0.2)
+        
+        
+send_to_all('name_request')
 
-f_user.close()
+time.sleep(0.25)
 
-c = 1
-while c <= 8:
+get_name = 1
+while get_name <= x:
     
-    exec('name = nm{}' .format(c))
+    name_connection = cm.queue_stm.get()
+    exec('player{} = game.player(name_connection[0])' .format(get_name))
+    exec('player_class_name = player{}' .format(get_name))
+    player_class_name.connection = name_connection[1]
     
-    if name == "":
-        c += 1
-        continue
+    j = 0
+    while j < x:
+        
+        if stager.connection_list[j] == name_connection[1]:
+            player_class_name.socket_id = j
+        j += 1
     
-    else:
-        exec('player{} = game.player(nm{})' .format(c, c))
-        exec('print(player{}.name, "ist dabei!")' .format(c))
-        c += 1
-        x += 1
+    get_name += 1
 
-
-stgr_process = multiprocessing.Process(target=stager.stgr, args=(mts, stm ,x))
-stgr_process.start()
-
-stm.get()    
 
 print("\n")
 f_snake = open("art/art_snake.txt", "r")
@@ -61,40 +83,57 @@ while True:
         
     i = 1
     while i <= x:
-            
-        exec('winbit = player{}.winbit' .format(i))
+        
+        exec('playerxx = player{}' .format(i))
+        winbit = playerxx.winbit
         if winbit == 0:
                 
             number = 1#game.dice()
-            exec('dtf = player{}.dst' .format(i))
+            dtf = playerxx.dst
                 
             if dtf > number:
-                exec('player{}.newlevel(number)' .format(i))
-                exec('print(player{}.name ,  "hat eine ", number, " gewürfelt und ist jetzt auf Feld ", player{}.level)' .format(i, i))
-                exec('print("Feld ", player{}.level, ":")' .format(i))
-                exec('fieldnumber = player{}.level' .format(i))
-                exec('a_f = open("board/field{}.txt", "r")' .format(fieldnumber))
+                playerxx.newlevel(number)
+                data1 = playerxx.name +  " hat eine " + str(number) + " gewürfelt und ist jetzt auf Feld " + str(playerxx.level)
+                send_to_all(data1)
+                fieldnumber = "board/field" + str(playerxx.level) + ".txt"
+                a_f = open(fieldnumber, "r")
 
                 for line in a_f:
                     exec('{}' .format(line))
                 a_f.close()
-                    
+                
+                cm.queue_mts.put((playerxx.socket_id, str(i)))
+                time.sleep(0.2)
+                
+                send_to_all(data1, playerxx.socket_id)
+                  
                     
             elif dtf == number:
                     
-                exec('player{}.newlevel(number)' .format(i))
-                exec('print(player{}.name ,  "hat gewonnen! --> Alle trinken aus!")' .format(i))
-                exec('player{}.winbit = 1' .format(i))
+                playerxx.newlevel(number)
+                data1 = playerxx.name +  "hat gewonnen! --> Alle trinken aus!"
+                playerxx.winbit = 1
                 winbitsum += 1
+                
                 if winbitsum == (x-1):
                         
                     endbit = 1
                     
+                cm.queue_mts.put((playerxx.socket_id, 'sys_won'))
+                time.sleep(0.2)
+                
+                send_to_all(data1)
+                    
             else:
                     
-                exec('print(player{}.name ,  ", ist kurz vor dem Ziel (Feld ", player{}.level , ") jedoch muss die richtige Zahl gewürfelt werden!")' .format(i, i))
+                data1 = playerxx.name +  ", ist kurz vor dem Ziel (Feld " + str(playerxx.level) + ") jedoch muss die richtige Zahl gewürfelt werden!"
+                cm.queue_mts.put((playerxx.socket_id, 'sys_rnmbr'))
+                time.sleep(0.2)
+                
+                send_to_all(data1)
+                
                     
-            exec('player{}.dist_to_fin({})' .format(i, number))
+            playerxx.dist_to_fin(number)
                 
         else:
             i += 1
@@ -113,8 +152,9 @@ while True:
                 
         il = 1
         while il <= x:
-                    
-            exec('winbit = player{}.winbit' .format(il))
+             
+            playeryy = "player" + str(il)
+            winbit = playeryy.winbit
             if winbit == 1:
                         
                 il += 1

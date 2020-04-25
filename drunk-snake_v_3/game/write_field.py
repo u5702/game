@@ -9,8 +9,10 @@ i = 1
 while i <= 100:
 
     exec('f = open("board/field{}.txt", "w")' .format(i))
-
-    f.write("#Field\n")
+        
+    stw = "Feld" + str(i)    
+    
+    f.write("#Field\n'print({})'" .format(stw))
     f.close()
     print(i)
     i +=  1
