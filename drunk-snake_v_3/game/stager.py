@@ -1,87 +1,156 @@
 import time
 import socket
-import multiprocessing
-import os
+import sys
+import threading
+from queue import Queue
+import communication_manager
 
-#class sockt:
+fail_socket_creation = 0
+
+queue_intern = Queue()
+
+connection_list = []
+address_list = []
+
+def create_socket(prt):
     
-#    def __init__(self, prt=5555):
-#        
-#        self.host = ''
-#        self.port = prt
-#        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#        self.connection = ""
-#        self.address = ""
+    global host
+    global port
+    global s
+    global fail_socket_creation
+    
+    try:
+        host = ''
+        port = prt
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind((host, port))
+
+    except socket.error as msg:
+        print("Error when creating the socket: " + str(msg), "\n")
+        fail_socket_creation += 1
         
-#        self.s.bind((host, port))
+        if fail_socket_creation < 5:
+            print("trying again to create the socket...")
+            create_socket()
+
+
+def setting_up_connections(number_of_connections, notimeout=False):
     
-#    def sockt_listen(self):
+    for i in connection_list:
+        i.close()
+
+    del connection_list[:]
+    del address_list[:]
+    
+    already_set = 1
+    while already_set <= number_of_connections:
         
-#        self.s.listen(1)
-#        (self.connection, self.address) = self.s.accept()
+        try:
+            s.listen(1)
+            (connection, address) = s.accept()
+            
+            if notimeout == True:
+                s.setblocking(1) #Blocking connection-timeout
+
+            connection_list.append(connection)
+            address_list.append(address)
+
+            print("A connection has been established to: " + address[0])
+
+        except:
+            print("Error when accepting connections")
+            break
+            
+        already_set += 1
+
+
+def close_connections():
+    
+    for i in connection_list:
+        i.close()
+    
+    print("All connections are closed!")
+
+
+def receive(connection, address, buffer, mode='message'):
+    
+    rawdata = connection.recv(buffer)
+    
+    if mode == 'message':
+        data = rawdata.decode('utf-8')
+    
+    elif mode == 'raw':
+        data == rawdata
         
+    else:
+        print("Error: no such mode available")
+   
+    return data
     
-#def create_socket(prt=5555):
-#    host = ''
-#    port = prt
-#    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#    s.bind((host, port))
 
-#def listen_socket():
-#    s.listen(1)
-#    (connection, self.address) = s.accept()
+def send(connection, address, data):
 
-con_set = 0
-
-host = ''
-port = 5555
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((host, port))
-
-
-def child(id, connection_tuple):
+    rawdata = bytes(data, 'utf-8')
+    connection.send(rawdata)
     
-    print("child ", id)
     
-    f = open("log/stager_child_processes.txt", "a")
-    PID = os.getpid()
-    exec('f.write("{}:{}")' .format(PID, id))
-    f.write("\n")
-    f.flush
-    f.close
+def listener(connection, address, buffer):
     
-    connection = connection_tuple[0]
-    address = connection_tuple[1]
     while True:
         
-        data = connection.recv(256)
-        if data == b'':
+        received_data = receive(connection, address, buffer)
+        
+        if received_data == '' or b'':
+            print("Error, connection closed ", address)
             break
-        print(data, address[0], id)
-        #exec('cmd = ptc{}.get()' .format(id))
-        #rawdata = bytes(cmd, 'utf-8')
-        #connection.send(rawdata)
-        #data = connection.recv(256)
-        #print(data, address[0])
+        
+        to_put = (received_data, address)
+        
+        queue_intern.put(to_put)
+        
 
+def create_thread_listener(number_of_connections, buffer):
+    
+    c = 0
+    
+    while c < number_of_connections:
+        
+        connection = connection_list[c]
+        address = address_list[c]
+        
+        t = threading.Thread(target=listener, args=(connection, address, buffer))
+        t.daemon = True
+        t.start()
+        
+        c += 1
+        
 
-def stgr(mts, stm, x):
+def start(prt, number_of_connections, notimeout=False):
+    
+    create_socket(prt)
+    setting_up_connections(number_of_connections, notimeout)
     
     
-    x_con = 1
-    while x_con <= x:
+def start_listener(number_of_connections, buffer):
+    
+    try:
+        create_thread_listener(number_of_connections, buffer)
+    
+    except Exception:
+        print("Error when creating listener thread, are the connections set?")
+    
+
+def get_from_listener():
+    
+    while True:
         
-        s.listen(1)
-        (connection, address) = s.accept()
+        got_from_listener = queue_intern.get()
+        print(got_from_listener)
         
-        exec('ptc{} = multiprocessing.Queue()' .format(x_con))
-        child_proc = multiprocessing.Process(target=child, args=(x_con, (connection, address)))
-        child_proc.start()
-        time.sleep(0.5)
         
-        if x_con == x:
-            global con_set
-            con_set = 1
-            
-        
-        x_con += 1
+def los():
+    start(4444, 2)
+    start_listener(2, 256)
+    data = communication_manager.queue_mts.get()
+    send(connection_list[0], address_list[0], data)
+    get_from_listener()

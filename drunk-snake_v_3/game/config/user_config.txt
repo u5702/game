@@ -8,9 +8,9 @@
 
 nm1 = "Adolf"        #<-- Spieler1
 nm2 = "Bernhard"        #<-- Spieler2
-nm3 = "Christoph"        #<-- Spieler3
-nm4 = "Daniel"        #<-- Spieler4
-nm5 = "Elijah"        #<-- Spieler5
+nm3 = ""        #<-- Spieler3
+nm4 = ""        #<-- Spieler4
+nm5 = ""        #<-- Spieler5
 nm6 = ""        #<-- Spieler6
 nm7 = ""        #<-- Spieler7
 nm8 = ""        #<-- Spieler8

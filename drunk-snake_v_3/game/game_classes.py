@@ -5,7 +5,6 @@
 #start
 import time
 import random
-import threading
 
 #Classes
 class player:

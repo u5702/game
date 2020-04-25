@@ -2,15 +2,14 @@
 # Date of creation: 13.04.2020
 # Last edited: 15.04.2020
 import time
-import socket
-import multiprocessing
 import game_classes as game
 import board
 import stager
-import os
+import threading
+from queue import Queue
+import communication_manager
 
-mts = multiprocessing.Queue()
-stm = multiprocessing.Queue()
+
 
 x = 0
 winbitsum = 0
@@ -43,11 +42,7 @@ while c <= 8:
 stgr_process = multiprocessing.Process(target=stager.stgr, args=(mts, stm ,x))
 stgr_process.start()
 
-while True:
-    
-    if stager.con_set == 1:
-        break
-    
+stm.get()    
 
 print("\n")
 f_snake = open("art/art_snake.txt", "r")
@@ -70,7 +65,7 @@ while True:
         exec('winbit = player{}.winbit' .format(i))
         if winbit == 0:
                 
-            number = game.dice()
+            number = 1#game.dice()
             exec('dtf = player{}.dst' .format(i))
                 
             if dtf > number:
@@ -78,11 +73,11 @@ while True:
                 exec('print(player{}.name ,  "hat eine ", number, " gewürfelt und ist jetzt auf Feld ", player{}.level)' .format(i, i))
                 exec('print("Feld ", player{}.level, ":")' .format(i))
                 exec('fieldnumber = player{}.level' .format(i))
-                exec('a_f = board.field{}.action' .format(fieldnumber))
-                f_a_f = open(a_f, "r")
-                for line in f_a_f:
+                exec('a_f = open("board/field{}.txt", "r")' .format(fieldnumber))
+
+                for line in a_f:
                     exec('{}' .format(line))
-                f_a_f.close()
+                a_f.close()
                     
                     
             elif dtf == number:
