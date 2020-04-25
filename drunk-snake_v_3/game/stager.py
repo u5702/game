@@ -3,11 +3,12 @@ import socket
 import sys
 import threading
 from queue import Queue
-import communication_manager
+import communication_manager as cm
 
 fail_socket_creation = 0
 
-queue_intern = Queue()
+queue_data = Queue()
+queue_id = Queue()
 
 connection_list = []
 address_list = []
@@ -84,7 +85,7 @@ def receive(connection, address, buffer, mode='message'):
         
     else:
         print("Error: no such mode available")
-   
+        
     return data
     
 
@@ -104,9 +105,34 @@ def listener(connection, address, buffer):
             print("Error, connection closed ", address)
             break
         
-        to_put = (received_data, address)
+        ptq = (received_data, address)
+        queue_data.put(ptq)
         
-        queue_intern.put(to_put)
+    
+def sender():
+    
+    while True:
+        
+        data_mts_queue = cm.queue_mts.get()
+        client_id = int(data_mts_queue[0])
+        data = data_mts_queue[1]
+        
+        connection = connection_list[client_id]
+        address = address_list[client_id]
+        
+        if data == '':
+            print("Empty messages are not allowed!")
+            
+        else:
+            send(connection, address, data)
+            
+            
+def get_from_listener():
+    
+    while True:
+        
+        gfl = queue_data.get()
+        cm.queue_stm.put(gfl)
         
 
 def create_thread_listener(number_of_connections, buffer):
@@ -124,8 +150,22 @@ def create_thread_listener(number_of_connections, buffer):
         
         c += 1
         
+        
+def create_thread_sender():
+        
+    t = threading.Thread(target=sender)
+    t.daemon = True
+    t.start()
+    
 
-def start(prt, number_of_connections, notimeout=False):
+def create_thread_get_from_listener():
+        
+    t = threading.Thread(target=get_from_listener)
+    t.daemon = True
+    t.start()
+        
+
+def start_stager(prt, number_of_connections, notimeout=False):
     
     create_socket(prt)
     setting_up_connections(number_of_connections, notimeout)
@@ -138,19 +178,28 @@ def start_listener(number_of_connections, buffer):
     
     except Exception:
         print("Error when creating listener thread, are the connections set?")
+        
+        
+def start_sender():
     
+    try:
+        create_thread_sender()
+    
+    except Exception:
+        print("Error when creating sender thread, are the connections set?")
+        
+def start_get_from_listener():
+    
+    try:
+        create_thread_get_from_listener()
+    
+    except Exception:
+        print("Error when creating get-from-listener thread, are the connections set?")
 
-def get_from_listener():
-    
-    while True:
-        
-        got_from_listener = queue_intern.get()
-        print(got_from_listener)
-        
-        
-def los():
-    start(4444, 2)
-    start_listener(2, 256)
-    data = communication_manager.queue_mts.get()
-    send(connection_list[0], address_list[0], data)
-    get_from_listener()
+
+#Usage:
+#stager.start_stager(4444, 2) # <-- port and number of clients
+#stager.start_listener(2, 256) # <-- number of clients and buffer size for sent data
+#stager.start_sender() # <-- start the sender ######main###### --> cm.queue_mts.put((ID, 'data'))
+#stager.start_get_from_listener() # <-- start the method that delivers sent data to main ######main###### --> cm.queue_stm.get()
+

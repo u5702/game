@@ -5,7 +5,8 @@ import threading
 from queue import Queue
 import communication_manager
 
-queue_intern = Queue()
+
+queue_i = Queue()
 
 f = open("config/connection_config.txt", "r")
 
@@ -54,34 +55,12 @@ def listener(buffer, s=s):
         if received_data == '' or b'':
             break
         
-        to_put = received_data
+        ptq = received_data
         
-        queue_intern.put(to_put)
-
-
-def create_thread_listener(buffer, s=s):
-   
-    t = threading.Thread(target=listener, args=(buffer, s))
-    t.daemon = True
-    t.start()
-
-
-def get_from_listener():
-    
-    while True:
+        queue_i.put(ptq)
         
-        got_from_listener = queue_intern.get()
         
-        if got_from_listener == 'error-break-now':
-            
-            s.close()
-            print("Connection closed, due to no signal!")
-            
-        else:
-            print(got_from_listener)
-
-
-def start_sender():
+def sender():
     
     while True:
     
@@ -92,6 +71,36 @@ def start_sender():
             
         else:
             send(data)
+        time.sleep(1)
+
+def create_thread_listener(buffer, s=s):
+   
+    t = threading.Thread(target=listener, args=(buffer, s))
+    t.daemon = True
+    t.start()
+
+
+def create_thread_sender():
+   
+    t = threading.Thread(target=sender)
+    t.daemon = True
+    t.start()
+    
+
+def get_from_listener():
+    
+    while True:
+        
+        gfl = queue_i.get()
+        
+        if gfl == 'error-break-now':
+            
+            s.close()
+            print("Connection closed, due to no signal!")
+            
+        else:
+            print(gfl)
+
         
 def start_listener(buffer):
     
@@ -102,5 +111,5 @@ def start_listener(buffer):
         print("Error when creating listener thread, are the connections set?")
         
 start_listener(256)
+create_thread_sender()
 get_from_listener()
-start_sender()
