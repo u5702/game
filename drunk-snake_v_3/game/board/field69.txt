@@ -1,2 +1,1 @@
-#Field
-'print(Feld69)'
+print("Feld69")

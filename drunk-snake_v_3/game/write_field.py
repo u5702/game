@@ -8,11 +8,9 @@ i = 1
 
 while i <= 100:
 
-    exec('f = open("board/field{}.txt", "w")' .format(i))
-        
-    stw = "Feld" + str(i)    
+    exec('f = open("board_client/field{}.txt", "w")' .format(i))   
     
-    f.write("#Field\n'print({})'" .format(stw))
+    f.write('Feld{}' .format(i))
     f.close()
     print(i)
     i +=  1

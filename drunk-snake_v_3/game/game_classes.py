@@ -9,7 +9,7 @@ import random
 #Classes
 class player:
     
-    def __init__(self, nm, bddy="#!sys_none_buddy"):
+    def __init__(self, nm, bddy='#!sys_none_buddy'):
         
         self.name = nm
         self.connection = ()
@@ -27,27 +27,14 @@ class player:
         
         self.level += lvl
     
-    def punish(self):
-        
-        self.pupi += 1
-        if self.pupi >= 3:
-            return 1
-        else:
-            return 0
-    
-    def gain(self, glls):
-        
-        self.guells += glls
-    
-    def spend(self, glls, plyr):
-        
-        self.guells -= glls
-        return glls, plyr
-    
     def dist_to_fin(self, nmbr):
     
         self.dst = (100 - self.level)
         
+    def add_buddy(self, ID):
+        
+        self.buddy = ID
+
 class field:
     
     def __init__(self, id):
